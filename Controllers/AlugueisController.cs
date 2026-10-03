@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocadoraVeiculos.Data;
 using LocadoraVeiculos.Models;
@@ -8,8 +8,12 @@ using System.Threading.Tasks;
 
 namespace LocadoraVeiculos.Controllers
 {
+    /// <summary>
+    /// Controlador responsável pela gestão das operações de Aluguel e Devolução de Veículos.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class AlugueisController : ControllerBase
     {
         private readonly ApplicationContext _context;
@@ -19,8 +23,14 @@ namespace LocadoraVeiculos.Controllers
             _context = context;
         }
 
-        // GET: api/Alugueis
+        /// <summary>
+        /// Obtém a listagem completa de todos os aluguéis registrados, incluindo dados de Cliente e Veículo.
+        /// </summary>
+        /// <response code="200">Lista de aluguéis retornada com sucesso.</response>
+        /// <response code="500">Erro interno do servidor ao buscar aluguéis.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<Aluguel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Aluguel>>> ObterTodos()
         {
             try
@@ -38,8 +48,15 @@ namespace LocadoraVeiculos.Controllers
             }
         }
 
-        // GET: api/Alugueis/5
+        /// <summary>
+        /// Obtém os dados detalhados de um aluguel específico pelo seu ID.
+        /// </summary>
+        /// <param name="id">Identificador único (ID) do aluguel.</param>
+        /// <response code="200">Aluguel encontrado com sucesso.</response>
+        /// <response code="404">Aluguel não encontrado com o ID especificado.</response>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(Aluguel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Aluguel>> ObterPorId(int id)
         {
             var aluguel = await _context.Alugueis
@@ -53,8 +70,18 @@ namespace LocadoraVeiculos.Controllers
             return Ok(aluguel);
         }
 
-        // POST: api/Alugueis
+        /// <summary>
+        /// Registra a locação (aluguel) de um veículo para um cliente.
+        /// </summary>
+        /// <param name="aluguel">Objeto contendo datas, valor da diária, quilometragem inicial, ID do cliente e ID do veículo.</param>
+        /// <response code="201">Aluguel registrado com sucesso.</response>
+        /// <response code="400">Dados inválidos, cliente/veículo não encontrados ou quilometragem incoerente.</response>
+        /// <response code="500">Erro interno do servidor ao registrar o aluguel.</response>
         [HttpPost]
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(Aluguel), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<Aluguel>> Criar([FromBody] Aluguel aluguel)
         {
             if (!ModelState.IsValid)
@@ -85,8 +112,21 @@ namespace LocadoraVeiculos.Controllers
             }
         }
 
-        // PUT: api/Alugueis/5/devolucao (Registra a devolução do veículo com quilometragem final e total)
+        /// <summary>
+        /// Registra a devolução do veículo, calcula o valor total com base nos dias utilizados e atualiza a quilometragem do veículo.
+        /// </summary>
+        /// <param name="id">Identificador único (ID) do aluguel.</param>
+        /// <param name="dataDevolucao">Data e hora em que a devolução ocorreu.</param>
+        /// <param name="quilometragemFinal">Quilometragem registrada no odômetro no momento da devolução.</param>
+        /// <response code="200">Devolução registrada com sucesso e total financeiro calculado.</response>
+        /// <response code="400">Quilometragem final menor que a inicial ou dados inconsistentes.</response>
+        /// <response code="404">Aluguel não encontrado com o ID especificado.</response>
+        /// <response code="500">Erro interno do servidor ao processar a devolução.</response>
         [HttpPut("{id}/devolucao")]
+        [ProducesResponseType(typeof(Aluguel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> RegistrarDevolucao(int id, [FromQuery] DateTime dataDevolucao, [FromQuery] int quilometragemFinal)
         {
             var aluguel = await _context.Alugueis.Include(a => a.Veiculo).FirstOrDefaultAsync(a => a.Id == id);
@@ -121,8 +161,17 @@ namespace LocadoraVeiculos.Controllers
             }
         }
 
-        // DELETE: api/Alugueis/5
+        /// <summary>
+        /// Exclui um registro de aluguel pelo seu ID.
+        /// </summary>
+        /// <param name="id">Identificador único (ID) do aluguel a ser excluído.</param>
+        /// <response code="204">Aluguel excluído com sucesso.</response>
+        /// <response code="404">Aluguel não encontrado com o ID especificado.</response>
+        /// <response code="500">Erro interno do servidor ao excluir aluguel.</response>
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Deletar(int id)
         {
             var aluguel = await _context.Alugueis.FindAsync(id);

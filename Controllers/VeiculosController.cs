@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocadoraVeiculos.Data;
 using LocadoraVeiculos.Models;
@@ -8,8 +8,12 @@ using System.Threading.Tasks;
 
 namespace LocadoraVeiculos.Controllers
 {
+    /// <summary>
+    /// Controlador responsável pelo gerenciamento da frota de Veículos da locadora.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class VeiculosController : ControllerBase
     {
         private readonly ApplicationContext _context;
@@ -19,8 +23,14 @@ namespace LocadoraVeiculos.Controllers
             _context = context;
         }
 
-        // GET: api/Veiculos
+        /// <summary>
+        /// Obtém a listagem completa de todos os veículos cadastrados, incluindo dados do Fabricante e da Categoria.
+        /// </summary>
+        /// <response code="200">Lista de veículos cadastrados retornada com sucesso.</response>
+        /// <response code="500">Erro interno do servidor ao buscar veículos.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<Veiculo>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Veiculo>>> ObterTodos()
         {
             try
@@ -38,8 +48,15 @@ namespace LocadoraVeiculos.Controllers
             }
         }
 
-        // GET: api/Veiculos/5
+        /// <summary>
+        /// Obtém os dados detalhados de um veículo específico pelo seu ID, com Fabricante e Categoria.
+        /// </summary>
+        /// <param name="id">Identificador único (ID) do veículo.</param>
+        /// <response code="200">Veículo encontrado com sucesso.</response>
+        /// <response code="404">Veículo não encontrado com o ID especificado.</response>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(Veiculo), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Veiculo>> ObterPorId(int id)
         {
             var veiculo = await _context.Veiculos
@@ -53,8 +70,18 @@ namespace LocadoraVeiculos.Controllers
             return Ok(veiculo);
         }
 
-        // POST: api/Veiculos
+        /// <summary>
+        /// Cadastra um novo veículo no estoque da locadora.
+        /// </summary>
+        /// <param name="veiculo">Objeto contendo modelo, ano de fabricação, quilometragem, placa, cor, fabricante e categoria.</param>
+        /// <response code="201">Veículo cadastrado com sucesso.</response>
+        /// <response code="400">Dados inválidos, placa duplicada ou Fabricante/Categoria inexistentes.</response>
+        /// <response code="500">Erro interno do servidor ao cadastrar o veículo.</response>
         [HttpPost]
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(Veiculo), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<Veiculo>> Criar([FromBody] Veiculo veiculo)
         {
             if (!ModelState.IsValid)
@@ -85,8 +112,21 @@ namespace LocadoraVeiculos.Controllers
             }
         }
 
-        // PUT: api/Veiculos/5
+        /// <summary>
+        /// Atualiza os dados de um veículo cadastrado.
+        /// </summary>
+        /// <param name="id">Identificador único (ID) do veículo a ser atualizado.</param>
+        /// <param name="veiculo">Objeto contendo as novas informações do veículo.</param>
+        /// <response code="204">Veículo atualizado com sucesso.</response>
+        /// <response code="400">ID da rota não coincide com o corpo, dados inválidos ou placa já em uso por outro veículo.</response>
+        /// <response code="404">Veículo não encontrado com o ID especificado.</response>
+        /// <response code="500">Erro interno do servidor ao atualizar o veículo.</response>
         [HttpPut("{id}")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Atualizar(int id, [FromBody] Veiculo veiculo)
         {
             if (id != veiculo.Id)
@@ -122,8 +162,19 @@ namespace LocadoraVeiculos.Controllers
             }
         }
 
-        // DELETE: api/Veiculos/5
+        /// <summary>
+        /// Exclui um veículo do sistema pelo seu ID.
+        /// </summary>
+        /// <param name="id">Identificador único (ID) do veículo a ser excluído.</param>
+        /// <response code="204">Veículo excluído com sucesso.</response>
+        /// <response code="400">Não é possível excluir um veículo que possui registros de aluguéis.</response>
+        /// <response code="404">Veículo não encontrado com o ID especificado.</response>
+        /// <response code="500">Erro interno do servidor ao excluir veículo.</response>
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Deletar(int id)
         {
             var veiculo = await _context.Veiculos.FindAsync(id);

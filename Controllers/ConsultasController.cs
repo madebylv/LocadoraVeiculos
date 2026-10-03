@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocadoraVeiculos.Data;
 using System;
@@ -7,8 +7,12 @@ using System.Threading.Tasks;
 
 namespace LocadoraVeiculos.Controllers
 {
+    /// <summary>
+    /// Controlador responsável por consultas avançadas com junções (INNER JOIN, LEFT JOIN) e agregações LINQ.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class ConsultasController : ControllerBase
     {
         private readonly ApplicationContext _context;
@@ -23,9 +27,15 @@ namespace LocadoraVeiculos.Controllers
         // =========================================================================================
 
         /// <summary>
-        /// Filtro 1 (INNER JOIN): Retorna veículos juntando dados do Fabricante e da Categoria
+        /// Filtro 1 (INNER JOIN): Retorna a listagem de veículos combinando dados de Veículo, Fabricante e Categoria.
         /// </summary>
+        /// <param name="fabricante">Filtro opcional por nome ou parte do nome do Fabricante.</param>
+        /// <param name="modelo">Filtro opcional por modelo ou parte do modelo do Veículo.</param>
+        /// <response code="200">Lista detalhada de veículos retornada com sucesso.</response>
+        /// <response code="500">Erro interno do servidor ao processar a consulta.</response>
         [HttpGet("veiculos-detalhados")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> FiltrarVeiculosDetalhados([FromQuery] string fabricante = null, [FromQuery] string modelo = null)
         {
             try
@@ -61,9 +71,14 @@ namespace LocadoraVeiculos.Controllers
         }
 
         /// <summary>
-        /// Filtro 2 (INNER JOIN): Retorna aluguéis juntando Cliente e Veículo, filtrando por CPF ou período
+        /// Filtro 2 (INNER JOIN): Retorna o histórico de aluguéis combinando Cliente e Veículo, com filtro opcional por CPF.
         /// </summary>
+        /// <param name="cpf">Filtro opcional por CPF do cliente.</param>
+        /// <response code="200">Lista de aluguéis e dados combinados retornada com sucesso.</response>
+        /// <response code="500">Erro interno do servidor ao consultar aluguéis.</response>
         [HttpGet("alugueis-por-cliente")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> FiltrarAlugueis([FromQuery] string cpf = null)
         {
             try
@@ -98,9 +113,14 @@ namespace LocadoraVeiculos.Controllers
         }
 
         /// <summary>
-        /// Filtro 3 (INNER JOIN + Agrupamento): Total financeiro gasto em aluguéis por cliente acima de um valor mínimo
+        /// Filtro 3 (INNER JOIN + Agrupamento): Total financeiro gasto em aluguéis por cliente, com filtro por valor mínimo acumulado.
         /// </summary>
+        /// <param name="valorMinimo">Valor financeiro mínimo total para filtragem (padrão: 0).</param>
+        /// <response code="200">Relatório de total gasto agrupado por cliente retornado com sucesso.</response>
+        /// <response code="500">Erro interno do servidor ao calcular os totais.</response>
         [HttpGet("total-gasto-por-cliente")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> FiltrarTotalGastoPorCliente([FromQuery] decimal valorMinimo = 0)
         {
             try
@@ -132,9 +152,14 @@ namespace LocadoraVeiculos.Controllers
         // =========================================================================================
 
         /// <summary>
-        /// Filtro 4 (LEFT OUTER JOIN): Lista todos os clientes e seus aluguéis (inclui clientes sem nenhum aluguel)
+        /// Filtro 4 (LEFT OUTER JOIN): Lista todos os clientes e seus respectivos aluguéis, permitindo identificar clientes inativos/sem aluguel.
         /// </summary>
+        /// <param name="apenasSemAluguel">Se true, retorna apenas clientes que nunca realizaram aluguel.</param>
+        /// <response code="200">Listagem de clientes com ou sem aluguel retornada com sucesso.</response>
+        /// <response code="500">Erro interno do servidor ao buscar clientes.</response>
         [HttpGet("clientes-com-ou-sem-aluguel")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> FiltrarClientesSemAluguel([FromQuery] bool apenasSemAluguel = false)
         {
             try
@@ -166,9 +191,14 @@ namespace LocadoraVeiculos.Controllers
         }
 
         /// <summary>
-        /// Filtro 5 (LEFT OUTER JOIN): Lista veículos e verifica se estão atualmente disponíveis (sem aluguel em aberto)
+        /// Filtro 5 (LEFT OUTER JOIN): Lista veículos e verifica status de disponibilidade em tempo real (sem aluguel em aberto).
         /// </summary>
+        /// <param name="apenasDisponiveis">Se true, filtra apenas veículos disponíveis para nova locação.</param>
+        /// <response code="200">Listagem de disponibilidade da frota retornada com sucesso.</response>
+        /// <response code="500">Erro interno do servidor ao verificar disponibilidade.</response>
         [HttpGet("veiculos-disponibilidade")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> FiltrarVeiculosDisponibilidade([FromQuery] bool apenasDisponiveis = true)
         {
             try

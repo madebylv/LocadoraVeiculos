@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocadoraVeiculos.Data;
 using LocadoraVeiculos.Models;
@@ -8,8 +8,12 @@ using System.Threading.Tasks;
 
 namespace LocadoraVeiculos.Controllers
 {
+    /// <summary>
+    /// Controlador responsável pela gestão do cadastro de Clientes da locadora.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class ClientesController : ControllerBase
     {
         private readonly ApplicationContext _context;
@@ -19,8 +23,14 @@ namespace LocadoraVeiculos.Controllers
             _context = context;
         }
 
-        // GET: api/Clientes
+        /// <summary>
+        /// Obtém a listagem completa de todos os clientes cadastrados.
+        /// </summary>
+        /// <response code="200">Lista de clientes obtida com sucesso.</response>
+        /// <response code="500">Erro interno do servidor ao buscar clientes.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<Cliente>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Cliente>>> ObterTodos()
         {
             try
@@ -34,8 +44,15 @@ namespace LocadoraVeiculos.Controllers
             }
         }
 
-        // GET: api/Clientes/5
+        /// <summary>
+        /// Obtém os dados detalhados de um cliente específico pelo seu ID.
+        /// </summary>
+        /// <param name="id">Identificador único (ID) do cliente.</param>
+        /// <response code="200">Cliente encontrado com sucesso.</response>
+        /// <response code="404">Cliente não encontrado com o ID especificado.</response>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(Cliente), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Cliente>> ObterPorId(int id)
         {
             var cliente = await _context.Clientes.FindAsync(id);
@@ -45,8 +62,18 @@ namespace LocadoraVeiculos.Controllers
             return Ok(cliente);
         }
 
-        // POST: api/Clientes
+        /// <summary>
+        /// Cadastra um novo cliente no sistema com validação de unicidade de CPF.
+        /// </summary>
+        /// <param name="cliente">Objeto contendo dados do cliente (Nome, CPF, Email, Telefone).</param>
+        /// <response code="201">Cliente cadastrado com sucesso.</response>
+        /// <response code="400">Dados inválidos ou CPF já existente no sistema.</response>
+        /// <response code="500">Erro interno do servidor ao cadastrar cliente.</response>
         [HttpPost]
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(Cliente), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<Cliente>> Criar([FromBody] Cliente cliente)
         {
             if (!ModelState.IsValid)
@@ -69,8 +96,21 @@ namespace LocadoraVeiculos.Controllers
             }
         }
 
-        // PUT: api/Clientes/5
+        /// <summary>
+        /// Atualiza os dados de um cliente existente.
+        /// </summary>
+        /// <param name="id">Identificador único (ID) do cliente a ser atualizado.</param>
+        /// <param name="cliente">Objeto contendo os dados atualizados do cliente.</param>
+        /// <response code="204">Cliente atualizado com sucesso.</response>
+        /// <response code="400">ID da rota não coincide com o corpo, dados inválidos ou CPF em uso por outro cliente.</response>
+        /// <response code="404">Cliente não encontrado com o ID especificado.</response>
+        /// <response code="500">Erro interno do servidor ao atualizar cliente.</response>
         [HttpPut("{id}")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Atualizar(int id, [FromBody] Cliente cliente)
         {
             if (id != cliente.Id)
@@ -103,8 +143,19 @@ namespace LocadoraVeiculos.Controllers
             }
         }
 
-        // DELETE: api/Clientes/5
+        /// <summary>
+        /// Exclui um cliente do sistema pelo seu ID.
+        /// </summary>
+        /// <param name="id">Identificador único (ID) do cliente a ser excluído.</param>
+        /// <response code="204">Cliente excluído com sucesso.</response>
+        /// <response code="400">Não é possível excluir um cliente que possui histórico de aluguéis registrados.</response>
+        /// <response code="404">Cliente não encontrado com o ID especificado.</response>
+        /// <response code="500">Erro interno do servidor ao excluir cliente.</response>
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Deletar(int id)
         {
             var cliente = await _context.Clientes.FindAsync(id);
